@@ -1,65 +1,146 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+
+type User = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  username:string;
+  email: string;
+  image:string;
+  birthDate:string;
+  bank: {
+    cardExpire: string;
+    cardType:string;
+  };
+};
+
+export default function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch("/api/users");
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+        setUsers(data.users);
+      } catch {
+        setError("Erreur lors du chargement");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const filteredUsers = users.filter((u) =>
+    `${u.firstName} ${u.lastName}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
+  const isExpired = (date: string) => {
+    return new Date(date) < new Date();
+  };
+
+  if (loading) return <p className="p-4">Chargement...</p>;
+  if (error) return <p className="p-4 text-red-500">{error}</p>;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="max-w-3xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Users</h1>
+
+      <input
+        className="w-full border p-2 mb-4"
+        placeholder="Search by name"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+<div className="bg-white rounded-lg border">
+  
+  
+  <div className="grid grid-cols-5 px-4 py-2 text-sm text-gray-500 font-medium border-b">
+    <div>User</div>
+    <div>Birthdate</div>
+    <div>Renew Date</div>
+    <div>Card Type</div>
+    <div></div>
+  </div>
+
+  
+  {filteredUsers.map((user) => {
+    const expired = isExpired(user.bank.cardExpire);
+
+    return (
+      <div
+        key={user.id}
+        className="grid grid-cols-5 px-4 py-3 items-center border-b hover:bg-gray-50"
+      >
+        
+        <div className="flex items-center gap-3">
+          <img
+            src={user.image}
+            alt=""
+            className="w-10 h-10 rounded-full"
+          />
+          <div>
+            <p className="font-semibold">
+              {user.firstName}_{user.lastName}
+            </p>
+            <p className="text-sm text-gray-500">
+              @{user.username}
+            </p>
+          </div>
+        </div>
+
+      
+        <div>
+          <p className="font-medium">
+            {new Date(user.birthDate).toLocaleDateString()}
+          </p>
+          <p className="text-sm text-gray-500">Birthdate</p>
+        </div>
+
+        
+        <div>
+          <p className="font-medium">
+            {expired ? "None" : user.bank.cardExpire}
+          </p>
+          <p className="text-sm text-gray-500">
+            {expired ? "Expires soon" : "Renew Date"}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        
+        <div>
+          <p className="font-medium">Maestro</p>
+          <p className="text-sm text-gray-500">Card Type</p>
         </div>
-      </main>
+
+        
+        <div className="flex justify-end">
+          <button
+            className={`px-4 py-2 rounded border text-sm font-medium ${
+              expired
+                ? "border-gray-300 text-gray-700"
+                : "border-red-300 text-red-600"
+            }`}
+          >
+            {expired ? "Renew" : "Cancel"}
+          </button>
+        </div>
+      </div>
+    );
+  })}
+</div>
+     
     </div>
   );
 }
